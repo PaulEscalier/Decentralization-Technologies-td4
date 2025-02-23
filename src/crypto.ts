@@ -25,30 +25,36 @@ type GenerateRsaKeyPair = {
   privateKey: webcrypto.CryptoKey;
 };
 export async function generateRsaKeyPair(): Promise<GenerateRsaKeyPair> {
-  // TODO implement this function using the crypto package to generate a public and private RSA key pair.
-  //      the public key should be used for encryption and the private key for decryption. Make sure the
-  //      keys are extractable.
+  const keyPair = await webcrypto.subtle.generateKey(
+      {
+        name: "RSA-OAEP",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256",
+      },
+      true, // extractable
+      ["encrypt", "decrypt"]
+  );
 
-  // remove this
-  return { publicKey: {} as any, privateKey: {} as any };
+  return {
+    publicKey: keyPair.publicKey,
+    privateKey: keyPair.privateKey,
+  };
 }
 
 // Export a crypto public key to a base64 string format
 export async function exportPubKey(key: webcrypto.CryptoKey): Promise<string> {
-  // TODO implement this function to return a base64 string version of a public key
-
-  // remove this
-  return "";
+  const exported = await webcrypto.subtle.exportKey('spki', key);
+  return arrayBufferToBase64(exported);
 }
 
 // Export a crypto private key to a base64 string format
 export async function exportPrvKey(
-  key: webcrypto.CryptoKey | null
+    key: webcrypto.CryptoKey | null
 ): Promise<string | null> {
-  // TODO implement this function to return a base64 string version of a private key
-
-  // remove this
-  return "";
+  if (!key) return null;
+  const exported = await webcrypto.subtle.exportKey('pkcs8', key);
+  return arrayBufferToBase64(exported);
 }
 
 // Import a base64 string public key to its native format

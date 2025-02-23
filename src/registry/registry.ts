@@ -1,10 +1,10 @@
 import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
 import { REGISTRY_PORT } from "../config";
+import { webcrypto } from "crypto";
 import {exportPrvKey, exportPubKey, generateRsaKeyPair} from "../crypto";
-import { generateKeyPairSync } from 'crypto';
 
-export type Node = { nodeId: number; pubKey: string; privateKey: any };
+export type Node = { nodeId: number; pubKey: string; pvKey: string };
 
 export type RegisterNodeBody = {
   nodeId: number;
@@ -27,16 +27,13 @@ export async function launchRegistry() {
   });
 
   _registry.post('/registerNode', async (req, res) => {
-    const { nodeId } = req.body;
-    const { publicKey, privateKey } = await generateRsaKeyPair();
-    const pubKey = await exportPubKey(publicKey);
-    const prvKey = await exportPrvKey(privateKey);
+    const { nodeId, publicKey, privateKey } = req.body;
 
-    if (nodeRegistry.some(node => node.pubKey === pubKey)) {
+    if (nodeRegistry.some(node => node.pubKey === publicKey)) {
       res.status(400).json({ error: 'Public key must be unique' });
     }
 
-    nodeRegistry.push({ nodeId, pubKey, privateKey: prvKey });
+    nodeRegistry.push({ nodeId:nodeId, pubKey:privateKey,pvKey:privateKey });
     res.status(200).json({ message: 'Node registered successfully' });
   });
 
@@ -47,12 +44,12 @@ export async function launchRegistry() {
     if (!node) {
       res.status(404).json({ error: 'Node not found' });
     }else
-      res.json({ result: node.privateKey });
+      res.json({ result: node.pvKey });
   });
 
 
-  _registry.get("/getNodeRegistry", (req, res:Response<GetNodeRegistryBody>) => {
-    const nodes = nodeRegistry.map(({ nodeId, pubKey, privateKey }) => ({ nodeId, pubKey, privateKey }));
+  _registry.get("/getNodeRegistry", (req, res: Response) => {
+    const nodes = nodeRegistry.map(({ nodeId, pubKey }) => ({ nodeId, pubKey }));
     res.json({ nodes });
   });
 

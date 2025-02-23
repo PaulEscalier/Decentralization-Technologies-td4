@@ -1,6 +1,8 @@
 import bodyParser from "body-parser";
 import express from "express";
-import { BASE_USER_PORT } from "../config";
+import { BASE_USER_PORT,REGISTRY_PORT } from "../config";
+import axios from "axios";
+
 
 export type SendMessageBody = {
   message: string;

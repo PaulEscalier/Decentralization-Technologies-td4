@@ -29,6 +29,14 @@ export async function user(userId: number) {
     res.json({result:lastSentMessage});
   });
 
+  _user.post("/message",(req,res)=>{
+    const {message} = req.body;
+    if(!message)
+        res.status(400).send("Message is required");
+    lastReceivedMessage = message;
+    res.status(200).send("success");
+  });
+
 
   const server = _user.listen(BASE_USER_PORT + userId, () => {
     console.log(

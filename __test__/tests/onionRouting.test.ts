@@ -471,7 +471,7 @@ describe("Onion Routing", () => {
       const decrypted = await rsaDecrypt(encrypted, privateKey);
 
       // verify that the retrieved private key corresponds to the public key in the registry
-      expect(decrypted).toBe(b64Message);
+      expect(btoa(decrypted)).toBe(b64Message);
     });
 
     test.todo("Hidden test - Can rsa encrypt and decrypt - 1pt");
@@ -508,7 +508,10 @@ describe("Onion Routing", () => {
 
       const encrypted = await symEncrypt(symKey, b64Message);
 
-      const decrypted = await symDecrypt(await exportSymKey(symKey), encrypted);
+      const exportedKey = await exportSymKey(symKey); // This is a string
+      const importedKey = await importSymKey(exportedKey); // Convert string back to CryptoKey
+      const decrypted = await symDecrypt(importedKey, encrypted);
+
 
       // verify that the retrieved private key corresponds to the public key in the registry
       expect(decrypted).toBe(b64Message);

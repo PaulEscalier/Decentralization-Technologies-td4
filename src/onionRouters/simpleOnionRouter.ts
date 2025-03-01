@@ -2,7 +2,7 @@ import bodyParser from "body-parser";
 import express from "express";
 import { BASE_ONION_ROUTER_PORT,REGISTRY_PORT } from "../config";
 import axios from "axios";
-import {exportPrvKey, exportPubKey, generateRsaKeyPair} from "../crypto";
+import {exportPrvKey, exportPubKey, generateRsaKeyPair, importSymKey, rsaDecrypt, symDecrypt} from "../crypto";
 
 
 export async function simpleOnionRouter(nodeId: number) {
@@ -50,11 +50,32 @@ export async function simpleOnionRouter(nodeId: number) {
     res.json({ result: lastMessageDestination });
   });
 
+  onionRouter.post("/message", async (req, res) => {
+    const { message } = req.body;
+
+    // Split the message into encrypted symmetric key and encrypted message
+    const [encryptedSymKey, encryptedMessage] = message.split(".");
+    console.log(encryptedSymKey);
+
+    // Decrypt the symmetric key with the private RSA key
+    const symKeyString = await rsaDecrypt(encryptedSymKey, privateKey);
+    console.log(symKeyString);
+    /*
+    // Import the symmetric key
+    const symKey = await importSymKey(symKeyString);
+
+    // Decrypt the message with the symmetric key
+    const decryptedMessage = await symDecrypt(symKey, encryptedMessage);
+
+    // Log the decrypted message
+    console.log(decryptedMessage);
+    */
+    // Send response
+    res.status(200).json({ message: "Message received successfully" });
+  });
 
 
   const server = onionRouter.listen(BASE_ONION_ROUTER_PORT + nodeId, () => {
-    console.log("public key "+pubKey);
-    console.log("private key "+prvKey);
     console.log(
       `Onion router ${nodeId} is listening on port ${
         BASE_ONION_ROUTER_PORT + nodeId

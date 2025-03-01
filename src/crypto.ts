@@ -4,15 +4,14 @@ import { webcrypto } from "crypto";
 // ### Utils ###
 // #############
 
-// Function to convert ArrayBuffer to Base64 string
+// Convert ArrayBuffer to Base64 string
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
     return Buffer.from(buffer).toString("base64");
 }
 
-// Function to convert Base64 string to ArrayBuffer
+// Convert Base64 string to ArrayBuffer
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
-    const buff = Buffer.from(base64, "base64");
-    return buff.buffer.slice(buff.byteOffset, buff.byteOffset + buff.byteLength);
+    return Uint8Array.from(Buffer.from(base64, "base64")).buffer;
 }
 
 // ################
@@ -95,7 +94,7 @@ export async function rsaDecrypt(data: string, privateKey: webcrypto.CryptoKey):
 
 export async function createRandomSymmetricKey(): Promise<webcrypto.CryptoKey> {
     return await webcrypto.subtle.generateKey(
-        { name: "AES-CBC", length: 256 },
+        { name: "AES-CBC", length: 256 }, // 256 bits
         true,
         ["encrypt", "decrypt"]
     );
@@ -108,6 +107,9 @@ export async function exportSymKey(key: webcrypto.CryptoKey): Promise<string> {
 
 export async function importSymKey(strKey: string): Promise<webcrypto.CryptoKey> {
     const keyBuffer = base64ToArrayBuffer(strKey);
+    if (keyBuffer.byteLength !== 16 && keyBuffer.byteLength !== 24 && keyBuffer.byteLength !== 32) {
+        throw new Error("Invalid key length. Key must be 128, 192, or 256 bits.");
+    }
     return await webcrypto.subtle.importKey("raw", keyBuffer, { name: "AES-CBC" }, true, ["encrypt", "decrypt"]);
 }
 
@@ -123,12 +125,12 @@ export async function symEncrypt(key: webcrypto.CryptoKey, data: string): Promis
 
 export async function symDecrypt(key: webcrypto.CryptoKey, encryptedData: string): Promise<string> {
     if (!encryptedData) {
-        throw new Error("The encrypted data is undefined or empty." + encryptedData);
+        throw new Error("No data provided for decryption.");
     }
 
     const [ivBase64, encryptedBase64] = encryptedData.split(".");
     if (!ivBase64 || !encryptedBase64) {
-        throw new Error("The encrypted data format is invalid." + encryptedData);
+        throw new Error("Invalid encrypted data format.");
     }
 
     const iv = base64ToArrayBuffer(ivBase64);
